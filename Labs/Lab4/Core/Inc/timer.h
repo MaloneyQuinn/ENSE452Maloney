@@ -10,10 +10,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
+#include <stdlib.h>
 
 //Global Variables
 extern TIM_HandleTypeDef htim4;
 extern UART_HandleTypeDef huart2;
+extern unsigned int seed;
 
 struct smallBytes
 {
