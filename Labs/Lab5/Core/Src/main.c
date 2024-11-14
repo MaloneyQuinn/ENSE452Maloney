@@ -44,22 +44,39 @@
 UART_HandleTypeDef huart2;
 
 /* Definitions for blinkLED */
-osThreadId_t blinkLEDHandler;
+osThreadId_t blinkLEDHandle;
 const osThreadAttr_t blinkLED_attributes = {
   .name = "blinkLED",
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
-
-/* Definitions for blinkLED2 */
-osThreadId_t blinkLED2Handler;
-const osThreadAttr_t blinkLED2_attributes = {
-  .name = "blinkLED2",
+/* Definitions for CLIReceive */
+osThreadId_t CLIReceiveHandle;
+const osThreadAttr_t CLIReceive_attributes = {
+  .name = "CLIReceive",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityAboveNormal,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for CLIUpdate */
+osThreadId_t CLIUpdateHandle;
+const osThreadAttr_t CLIUpdate_attributes = {
+  .name = "CLIUpdate",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for periodQueue */
+osMessageQueueId_t periodQueueHandle;
+const osMessageQueueAttr_t periodQueue_attributes = {
+  .name = "periodQueue"
 };
 /* USER CODE BEGIN PV */
 
+uint8_t cliRXChar[1];
+uint8_t cliBufferRX[30];
+int counter = 0;
+uint16_t newPeriod = 0;
+char newLineMessage[] = "Enter a command: ";
+uint16_t period = 500;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -67,7 +84,8 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 void StartblinkLED(void *argument);
-void StartblinkLED2(void *argument);
+void StartCLIReceive(void *argument);
+void StartCLIUpdate(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -109,7 +127,25 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+    char periodMessage[] = "Period ";
+	char newLineMessage[] = "Enter a command: ";
+	char scrollBox[] = "\x1b[5;r";
+	char initialMoveCursor[] = "\x1b[5;0H";
+	char topMoveCursor[] = "\x1b[0;9H";
+	char saveCursor[] = "\x1b[s";
+	char restoreCursor[] = "\x1b[u";
+	char charPeriodCounter[4];
+	for(int x = 0; x < sizeof periodMessage; x++)
+	  HAL_UART_Transmit(&huart2, (unsigned char *)&periodMessage[x], 1, 100);
+	sprintf (charPeriodCounter, "%d", period);
+	for(int x = 0; x < sizeof charPeriodCounter; x++)
+		  HAL_UART_Transmit(&huart2, (unsigned char *)&charPeriodCounter[x], 1, 100);
+	for(int x = 0; x < sizeof scrollBox; x++)
+	  HAL_UART_Transmit(&huart2, (unsigned char *)&scrollBox[x], 1, 100);
+	for(int x = 0; x < sizeof initialMoveCursor; x++)
+	  HAL_UART_Transmit(&huart2, (unsigned char *)&initialMoveCursor[x], 1, 100);
+	for(int x = 0; x < sizeof newLineMessage; x++)
+		  HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -127,16 +163,23 @@ int main(void)
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* creation of periodQueue */
+  periodQueueHandle = osMessageQueueNew (8, sizeof(uint16_t), &periodQueue_attributes);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
-  /* creation of defaultTask */
+  /* creation of blinkLED */
   blinkLEDHandle = osThreadNew(StartblinkLED, NULL, &blinkLED_attributes);
 
-  /* creation of defaultTask */
-  blinkLED2Handle = osThreadNew(StartblinkLED2, NULL, &blinkLED2_attributes);
+  /* creation of CLIReceive */
+  CLIReceiveHandle = osThreadNew(StartCLIReceive, NULL, &CLIReceive_attributes);
+
+  /* creation of CLIUpdate */
+  CLIUpdateHandle = osThreadNew(StartCLIUpdate, NULL, &CLIUpdate_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -278,9 +321,9 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE END 4 */
 
-/* USER CODE BEGIN Header_StartDefaultTask */
+/* USER CODE BEGIN Header_StartblinkLED */
 /**
-  * @brief  Function implementing the defaultTask thread.
+  * @brief  Function implementing the blinkLED thread.
   * @param  argument: Not used
   * @retval None
   */
@@ -291,23 +334,55 @@ void StartblinkLED(void *argument)
   /* Infinite loop */
   for(;;)
   {
+	osMessageQueueGet(periodQueueHandle, &period, NULL, 200);
 	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-    osDelay(500);
+    osDelay(period);
   }
+
+  osThreadTerminate(NULL);
   /* USER CODE END 5 */
 }
 
-/* USER CODE END Header_StartblinkLED2 */
-void StartblinkLED2(void *argument)
+/* USER CODE BEGIN Header_StartCLIReceive */
+/**
+* @brief Function implementing the CLIReceive thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartCLIReceive */
+void StartCLIReceive(void *argument)
 {
-  /* USER CODE BEGIN 5 */
+  /* USER CODE BEGIN StartCLIReceive */
   /* Infinite loop */
   for(;;)
   {
-	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-    osDelay(500);
+	  newPeriod = CLI_Receive();
+	  if (newPeriod != 0)
+		  osMessageQueuePut(periodQueueHandle, &newPeriod, 0, 500);
+	  osDelay(200);
   }
-  /* USER CODE END 5 */
+
+  osThreadTerminate(NULL);
+  /* USER CODE END StartCLIReceive */
+}
+
+/* USER CODE BEGIN Header_StartCLIUpdate */
+/**
+* @brief Function implementing the CLIUpdate thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartCLIUpdate */
+void StartCLIUpdate(void *argument)
+{
+  /* USER CODE BEGIN StartCLIUpdate */
+  /* Infinite loop */
+  for(;;)
+  {
+	CLI_Display(period);
+    osDelay(300);
+  }
+  /* USER CODE END StartCLIUpdate */
 }
 
 /**

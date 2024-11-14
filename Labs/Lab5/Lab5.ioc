@@ -2,8 +2,10 @@
 CAD.formats=
 CAD.pinconfig=
 CAD.provider=
-FREERTOS.IPParameters=Tasks01
-FREERTOS.Tasks01=defaultTask,24,128,StartDefaultTask,Default,NULL,Dynamic,NULL,NULL
+FREERTOS.FootprintOK=true
+FREERTOS.IPParameters=Tasks01,FootprintOK,Queues01
+FREERTOS.Queues01=periodQueue,8,uint16_t,0,Dynamic,NULL,NULL
+FREERTOS.Tasks01=blinkLED,32,128,StartblinkLED,Default,NULL,Dynamic,NULL,NULL;CLIReceive,24,128,StartCLIReceive,Default,NULL,Dynamic,NULL,NULL;CLIUpdate,8,128,StartCLIUpdate,Default,NULL,Dynamic,NULL,NULL
 File.Version=6
 KeepUserPlacement=false
 Mcu.CPN=STM32F103RBT6
