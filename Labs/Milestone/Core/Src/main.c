@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "CLI.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -83,6 +84,11 @@ void Start_CLI_Update(void *argument);
 
 /* USER CODE BEGIN PFP */
 
+uint8_t cliRXChar;
+uint8_t cliBufferTX[30];
+uint8_t cliBufferRX[30];
+int counter = 0;
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -122,6 +128,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  HAL_UART_Receive_IT (&huart2, &cliRXChar, 1);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -303,10 +310,15 @@ static void MX_GPIO_Init(void)
 void Start_CLI_Input(void *argument)
 {
   /* USER CODE BEGIN 5 */
+  int j;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	if(cliRXChar != '\0')
+	{
+		j = CLI_Receive();
+	}
+    osDelay(100);
   }
   /* USER CODE END 5 */
 }
@@ -324,7 +336,7 @@ void Start_Change_Light(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000);
   }
   /* USER CODE END Start_Change_Light */
 }
@@ -342,7 +354,7 @@ void Start_CLI_Update(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000);
   }
   /* USER CODE END Start_CLI_Update */
 }
@@ -382,6 +394,14 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef * husart)
+{
+	while((HAL_UART_GetState(&huart2)&HAL_UART_STATE_BUSY_RX)==HAL_UART_STATE_BUSY_RX);
+
+	HAL_UART_Receive_IT(&huart2, &cliRXChar ,1);
+}
+
 
 #ifdef  USE_FULL_ASSERT
 /**

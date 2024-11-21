@@ -15,7 +15,7 @@
 
 //Global Variables
 extern UART_HandleTypeDef huart2;
-extern uint8_t cliRXChar[1];
+extern uint8_t cliRXChar;
 extern uint8_t cliBufferRX[30];
 extern int counter;
 
