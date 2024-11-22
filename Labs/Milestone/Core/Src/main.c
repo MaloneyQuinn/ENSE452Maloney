@@ -333,10 +333,22 @@ void Start_CLI_Input(void *argument)
 void Start_Change_Light(void *argument)
 {
   /* USER CODE BEGIN Start_Change_Light */
+  uint8_t lightState = 0;
+  uint8_t newLightState = 0;
+  uint16_t lightCounter = 0;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1000);
+	newLightState = lightStateChange(lightState, lightCounter);
+	if (newLightState != lightState)
+	{
+		lightState = newLightState;
+		osMessageQueuePut(CLI_QueueHandle, &lightState, 0, 500);
+		lightCounter = 0;
+	}
+	else
+		lightCounter++;
+    osDelay(500);
   }
   /* USER CODE END Start_Change_Light */
 }
@@ -351,10 +363,18 @@ void Start_Change_Light(void *argument)
 void Start_CLI_Update(void *argument)
 {
   /* USER CODE BEGIN Start_CLI_Update */
+  uint8_t newState = 0;
+  uint8_t lightState = 7;
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1000);
+	osMessageQueueGet(CLI_QueueHandle, &newState, NULL, 200);
+	if (newState != lightState)
+	{
+		lightState = newState;
+		CLI_Display(lightState);
+	}
+    osDelay(100);
   }
   /* USER CODE END Start_CLI_Update */
 }

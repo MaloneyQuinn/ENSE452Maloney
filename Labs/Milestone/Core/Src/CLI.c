@@ -1,7 +1,7 @@
 /*
  * CLI.c
  *
- *  Created on: Nov 14, 2024
+ *  Created on: Nov 21, 2024
  *      Author: qkmal
  */
 
@@ -93,26 +93,168 @@ uint16_t CLI_Receive()
 	return 0;
 }
 
-void CLI_Display(uint16_t period)
+void CLI_Display(uint8_t state)
 {
-	char charPeriod[4];
 	char topMoveCursor[] = "\x1b[0;9H";
 	char saveCursor[] = "\x1b[s";
 	char restoreCursor[] = "\x1b[u";
 	char clearLine[] = "\33[2K\r";
-	char periodMessage[] = "Period ";
+	char newLine = '\n';
+	char cr = '\r';
+	char northSouthStatus[] = "North-South Light Status: ";
+	char eastWestStatus[] = "East-West Light Status: ";
+	char turn[] = "Left Turn Signal";
+	char green[] = "Green Light";
+	char yellow[] = "Yellow Light";
+	char red[] = "Red Light";
 
-	sprintf (charPeriod, "%d", period);
     for(int x = 0; x < sizeof saveCursor; x++)
     	HAL_UART_Transmit(&huart2, (unsigned char *)&saveCursor[x], 1, 100);
     for(int x = 0; x < sizeof topMoveCursor; x++)
 	    HAL_UART_Transmit(&huart2, (unsigned char *)&topMoveCursor[x], 1, 100);
     for(int x = 0; x < sizeof clearLine; x++)
     	    HAL_UART_Transmit(&huart2, (unsigned char *)&clearLine[x], 1, 100);
-    for(int x = 0; x < sizeof periodMessage; x++)
-    	  HAL_UART_Transmit(&huart2, (unsigned char *)&periodMessage[x], 1, 100);
-    for(int x = 0; x < sizeof charPeriod; x++)
-	    HAL_UART_Transmit(&huart2, (unsigned char *)&charPeriod[x], 1, 100);
+
+    if (state == 0 || state == 4)
+    {
+    	for(int x = 0; x < sizeof northSouthStatus; x++)
+    		HAL_UART_Transmit(&huart2, (unsigned char *)&northSouthStatus[x], 1, 100);
+
+    	for(int x = 0; x < sizeof red; x++)
+    	    HAL_UART_Transmit(&huart2, (unsigned char *)&red[x], 1, 100);
+
+    	HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+    	HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+    	for(int x = 0; x < sizeof clearLine; x++)
+    		HAL_UART_Transmit(&huart2, (unsigned char *)&clearLine[x], 1, 100);
+
+    	for(int x = 0; x < sizeof eastWestStatus; x++)
+    	    HAL_UART_Transmit(&huart2, (unsigned char *)&eastWestStatus[x], 1, 100);
+
+    	for(int x = 0; x < sizeof red; x++)
+    		HAL_UART_Transmit(&huart2, (unsigned char *)&red[x], 1, 100);
+    }
+
+    else if (state == 1)
+        {
+        	for(int x = 0; x < sizeof northSouthStatus; x++)
+        		HAL_UART_Transmit(&huart2, (unsigned char *)&northSouthStatus[x], 1, 100);
+
+        	for(int x = 0; x < sizeof turn; x++)
+        	    HAL_UART_Transmit(&huart2, (unsigned char *)&turn[x], 1, 100);
+
+        	HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+        	HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+        	for(int x = 0; x < sizeof clearLine; x++)
+        		HAL_UART_Transmit(&huart2, (unsigned char *)&clearLine[x], 1, 100);
+
+        	for(int x = 0; x < sizeof eastWestStatus; x++)
+        	    HAL_UART_Transmit(&huart2, (unsigned char *)&eastWestStatus[x], 1, 100);
+
+        	for(int x = 0; x < sizeof red; x++)
+        		HAL_UART_Transmit(&huart2, (unsigned char *)&red[x], 1, 100);
+        }
+
+    else if (state == 2)
+	   {
+		for(int x = 0; x < sizeof northSouthStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&northSouthStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof green; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&green[x], 1, 100);
+
+		HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+		HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+		for(int x = 0; x < sizeof clearLine; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&clearLine[x], 1, 100);
+
+		for(int x = 0; x < sizeof eastWestStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&eastWestStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof red; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&red[x], 1, 100);
+	   }
+
+    else if (state == 3)
+	   {
+		for(int x = 0; x < sizeof northSouthStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&northSouthStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof yellow; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&yellow[x], 1, 100);
+
+		HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+		HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+		for(int x = 0; x < sizeof clearLine; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&clearLine[x], 1, 100);
+
+		for(int x = 0; x < sizeof eastWestStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&eastWestStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof red; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&red[x], 1, 100);
+	   }
+
+    else if (state == 5)
+	   {
+		for(int x = 0; x < sizeof northSouthStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&northSouthStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof red; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&red[x], 1, 100);
+
+		HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+		HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+		for(int x = 0; x < sizeof clearLine; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&clearLine[x], 1, 100);
+
+		for(int x = 0; x < sizeof eastWestStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&eastWestStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof turn; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&turn[x], 1, 100);
+	   }
+
+    else if (state == 6)
+	   {
+		for(int x = 0; x < sizeof northSouthStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&northSouthStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof red; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&red[x], 1, 100);
+
+		HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+		HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+		for(int x = 0; x < sizeof clearLine; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&clearLine[x], 1, 100);
+
+		for(int x = 0; x < sizeof eastWestStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&eastWestStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof green; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&green[x], 1, 100);
+	   }
+
+    else if (state == 7)
+	   {
+		for(int x = 0; x < sizeof northSouthStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&northSouthStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof red; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&red[x], 1, 100);
+
+		HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+		HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+		for(int x = 0; x < sizeof clearLine; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&clearLine[x], 1, 100);
+
+		for(int x = 0; x < sizeof eastWestStatus; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&eastWestStatus[x], 1, 100);
+
+		for(int x = 0; x < sizeof yellow; x++)
+			HAL_UART_Transmit(&huart2, (unsigned char *)&yellow[x], 1, 100);
+	   }
+
     for(int x = 0; x < sizeof restoreCursor; x++)
 	    HAL_UART_Transmit(&huart2, (unsigned char *)&restoreCursor[x], 1, 100);
 
