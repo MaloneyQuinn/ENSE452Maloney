@@ -12,7 +12,7 @@ uint16_t CLI_Receive()
 {
 	char newLineMessage[] = "Enter a command: ";
 	char error[] = "Error: not a valid command. Type 'help' to see commands";
-	char help[] = "'period ' followed by a 4 digit integer will change the interval of the LED. ex: period 0300 for 300";
+	char help[] = "enter 'p#' (1-4) to initiate a pedestrian crossing button. ex: p3";
 	char newLine = '\n';
 	char cr = '\r';
 	if (cliRXChar != 0x7F)
@@ -21,32 +21,45 @@ uint16_t CLI_Receive()
 	if (cliRXChar == 0x0D)
 	{
 		HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
-		if (cliBufferRX[0] == 'p' && cliBufferRX[1] == 'e' && cliBufferRX[2] == 'r' && cliBufferRX[3] == 'i'
-				&& cliBufferRX[4] == 'o' && cliBufferRX[5] == 'd')
+		if (cliBufferRX[0] == 'p' && cliBufferRX[1] == '1')
 		{
 			cliRXChar = 0;
 			counter = 0;
-			uint16_t newPeriod = 0;
-			uint16_t newPeriodInt[4];
-			int y = 0;
-			for (int x = 7; x < 11; x ++)
-			{
-				if (cliBufferRX[x] != '/0')
-				{
-					newPeriodInt[y] = cliBufferRX[x] - 48;
-					y++;
-				}
-			}
-			for (int i = 0; i < 4; i++)
-			{
-				if(newPeriodInt[i] != 65488)
-					newPeriod = 10 * newPeriod + newPeriodInt[i];
-			}
 			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
 			HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
 			for(int x = 0; x < sizeof newLineMessage; x++)
 				HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
-			return newPeriod;
+			return 1;
+		}
+		else if (cliBufferRX[0] == 'p' && cliBufferRX[1] == '2')
+		{
+			cliRXChar = 0;
+			counter = 0;
+			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+			HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+			for(int x = 0; x < sizeof newLineMessage; x++)
+				HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
+			return 2;
+		}
+		else if (cliBufferRX[0] == 'p' && cliBufferRX[1] == '3')
+		{
+			cliRXChar = 0;
+			counter = 0;
+			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+			HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+			for(int x = 0; x < sizeof newLineMessage; x++)
+				HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
+			return 1;
+		}
+		else if (cliBufferRX[0] == 'p' && cliBufferRX[1] == '4')
+		{
+			cliRXChar = 0;
+			counter = 0;
+			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+			HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+			for(int x = 0; x < sizeof newLineMessage; x++)
+				HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
+			return 2;
 		}
 		else if (cliBufferRX[0] == 'h' && cliBufferRX[1] == 'e' && cliBufferRX[2] == 'l' && cliBufferRX[3] == 'p')
 		{

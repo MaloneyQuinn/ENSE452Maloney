@@ -19,7 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "CLI.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -69,6 +68,11 @@ const osThreadAttr_t CLI_Update_attributes = {
 osMessageQueueId_t CLI_QueueHandle;
 const osMessageQueueAttr_t CLI_Queue_attributes = {
   .name = "CLI_Queue"
+};
+/* Definitions for ped_Queue */
+osMessageQueueId_t ped_QueueHandle;
+const osMessageQueueAttr_t ped_Queue_attributes = {
+  .name = "ped_Queue"
 };
 /* USER CODE BEGIN PV */
 
@@ -129,6 +133,18 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_UART_Receive_IT (&huart2, &cliRXChar, 1);
+  char newLineMessage[] = "Enter a command: ";
+  char scrollBox[] = "\x1b[5;r";
+  char initialMoveCursor[] = "\x1b[5;0H";
+
+  for(int x = 0; x < sizeof initialMoveCursor; x++)
+  	  HAL_UART_Transmit(&huart2, (unsigned char *)&initialMoveCursor[x], 1, 100);
+  for(int x = 0; x < sizeof scrollBox; x++)
+  	  HAL_UART_Transmit(&huart2, (unsigned char *)&scrollBox[x], 1, 100);
+  for(int x = 0; x < sizeof initialMoveCursor; x++)
+	  HAL_UART_Transmit(&huart2, (unsigned char *)&initialMoveCursor[x], 1, 100);
+  for(int x = 0; x < sizeof newLineMessage; x++)
+  	  HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -148,7 +164,10 @@ int main(void)
 
   /* Create the queue(s) */
   /* creation of CLI_Queue */
-  CLI_QueueHandle = osMessageQueueNew (8, sizeof(uint8_t), &CLI_Queue_attributes);
+  CLI_QueueHandle = osMessageQueueNew (1, sizeof(uint8_t), &CLI_Queue_attributes);
+
+  /* creation of ped_Queue */
+  ped_QueueHandle = osMessageQueueNew (4, sizeof(uint8_t), &ped_Queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -297,6 +316,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef * husart)
+{
+	while((HAL_UART_GetState(&huart2)&HAL_UART_STATE_BUSY_RX)==HAL_UART_STATE_BUSY_RX);
+	//Listen for the interrupt and buffer one character at a time.
+	HAL_UART_Receive_IT(&huart2, &cliRXChar ,1);
+}
 
 /* USER CODE END 4 */
 
@@ -310,13 +335,15 @@ static void MX_GPIO_Init(void)
 void Start_CLI_Input(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  int j;
+  uint8_t pedestrian = 0;
   /* Infinite loop */
   for(;;)
   {
 	if(cliRXChar != '\0')
 	{
-		j = CLI_Receive();
+		pedestrian = CLI_Receive();
+		if (pedestrian != 0)
+			osMessageQueuePut(ped_QueueHandle, &pedestrian, 0, 500);
 	}
     osDelay(100);
   }
@@ -336,15 +363,29 @@ void Start_Change_Light(void *argument)
   uint8_t lightState = 0;
   uint8_t newLightState = 0;
   uint16_t lightCounter = 0;
+  uint8_t pedestrian = 0;
+  uint8_t pedestrianNS = 0;
+  uint8_t pedestrianEW = 0;
   /* Infinite loop */
   for(;;)
   {
-	newLightState = lightStateChange(lightState, lightCounter);
+	osMessageQueueGet(ped_QueueHandle, &pedestrian, NULL, 200);
+	if(pedestrian == 1)
+		pedestrianNS = 1;
+	if(pedestrian == 2)
+		pedestrianEW = 1;
+	newLightState = lightStateChange(lightState, lightCounter, pedestrianNS, pedestrianEW);
 	if (newLightState != lightState)
 	{
 		lightState = newLightState;
 		osMessageQueuePut(CLI_QueueHandle, &lightState, 0, 500);
 		lightCounter = 0;
+		if(lightState == 0 || lightState == 4)
+		{
+			pedestrian = 0;
+			pedestrianNS = 0;
+			pedestrianEW = 0;
+		}
 	}
 	else
 		lightCounter++;
@@ -414,14 +455,6 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef * husart)
-{
-	while((HAL_UART_GetState(&huart2)&HAL_UART_STATE_BUSY_RX)==HAL_UART_STATE_BUSY_RX);
-
-	HAL_UART_Receive_IT(&huart2, &cliRXChar ,1);
-}
-
 
 #ifdef  USE_FULL_ASSERT
 /**
