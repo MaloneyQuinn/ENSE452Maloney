@@ -296,7 +296,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, Red_N_S_Pin|Yellow_N_S_Pin|Green_N_S_Pin|LD2_Pin
+                          |Turn_E_W_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, Turn_N_S_Pin|Red_E_W_Pin|Yellow_E_W_Pin|Green_E_W_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
@@ -304,12 +308,21 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
+  /*Configure GPIO pins : Red_N_S_Pin Yellow_N_S_Pin Green_N_S_Pin LD2_Pin
+                           Turn_E_W_Pin */
+  GPIO_InitStruct.Pin = Red_N_S_Pin|Yellow_N_S_Pin|Green_N_S_Pin|LD2_Pin
+                          |Turn_E_W_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : Turn_N_S_Pin Red_E_W_Pin Yellow_E_W_Pin Green_E_W_Pin */
+  GPIO_InitStruct.Pin = Turn_N_S_Pin|Red_E_W_Pin|Yellow_E_W_Pin|Green_E_W_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -389,6 +402,7 @@ void Start_Change_Light(void *argument)
 	}
 	else
 		lightCounter++;
+	lightPhysicalChange(lightState);
     osDelay(500);
   }
   /* USER CODE END Start_Change_Light */

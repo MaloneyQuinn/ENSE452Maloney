@@ -14,5 +14,6 @@
 
 //Functions
 uint8_t lightStateChange(uint8_t, uint16_t, uint8_t, uint8_t);
+void lightPhysicalChange(uint8_t);
 
 #endif /* INC_LIGHTS_H_ */
