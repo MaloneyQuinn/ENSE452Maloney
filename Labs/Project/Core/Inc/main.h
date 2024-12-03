@@ -57,6 +57,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define Maintenance_Mode_Pin GPIO_PIN_13
+#define Maintenance_Mode_GPIO_Port GPIOC
+#define Maintenance_Mode_EXTI_IRQn EXTI15_10_IRQn
 #define Red_N_S_Pin GPIO_PIN_0
 #define Red_N_S_GPIO_Port GPIOA
 #define Yellow_N_S_Pin GPIO_PIN_1

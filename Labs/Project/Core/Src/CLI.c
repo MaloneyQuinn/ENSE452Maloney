@@ -12,7 +12,8 @@ uint16_t CLI_Receive()
 {
 	char newLineMessage[] = "Enter a command: ";
 	char error[] = "Error: not a valid command. Type 'help' to see commands";
-	char help[] = "enter 'p#' (1-4) to initiate a pedestrian crossing button. ex: p3";
+	char help1[] = "enter 'p#' (1-4) to initiate a pedestrian crossing button. ex: p3 .";
+	char help2[] = "Enter e followed by the street directions to simulate an emergency vehicle. either ens or eew";
 	char newLine = '\n';
 	char cr = '\r';
 	if (cliRXChar != 0x7F)
@@ -61,13 +62,37 @@ uint16_t CLI_Receive()
 				HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
 			return 2;
 		}
+		else if (cliBufferRX[0] == 'e' && cliBufferRX[1] == 'n' && cliBufferRX[2] == 's')
+		{
+			cliRXChar = 0;
+			counter = 0;
+			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+			HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+			for(int x = 0; x < sizeof newLineMessage; x++)
+				HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
+			return 3;
+		}
+		else if (cliBufferRX[0] == 'e' && cliBufferRX[1] == 'e' && cliBufferRX[2] == 'w')
+		{
+			cliRXChar = 0;
+			counter = 0;
+			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+			HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+			for(int x = 0; x < sizeof newLineMessage; x++)
+				HAL_UART_Transmit(&huart2, (unsigned char *)&newLineMessage[x], 1, 100);
+			return 4;
+		}
 		else if (cliBufferRX[0] == 'h' && cliBufferRX[1] == 'e' && cliBufferRX[2] == 'l' && cliBufferRX[3] == 'p')
 		{
 
 			cliRXChar = 0;
 			counter = 0;
-			for(int x = 0; x < sizeof help; x++)
-				HAL_UART_Transmit(&huart2, (unsigned char *)&help[x], 1, 100);
+			for(int x = 0; x < sizeof help1; x++)
+				HAL_UART_Transmit(&huart2, (unsigned char *)&help1[x], 1, 100);
+			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
+			HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);
+			for(int x = 0; x < sizeof help2; x++)
+				HAL_UART_Transmit(&huart2, (unsigned char *)&help2[x], 1, 100);
 			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
 			HAL_UART_Transmit(&huart2, (unsigned char *)&newLine, 1, 100);
 			HAL_UART_Transmit(&huart2, (unsigned char *)&cr, 1, 100);

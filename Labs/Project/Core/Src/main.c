@@ -22,6 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "CLI.h"
+#include "lights.h"
 
 /* USER CODE END Includes */
 
@@ -74,6 +76,16 @@ osMessageQueueId_t ped_QueueHandle;
 const osMessageQueueAttr_t ped_Queue_attributes = {
   .name = "ped_Queue"
 };
+/* Definitions for Maintenance_Queue */
+osMessageQueueId_t Maintenance_QueueHandle;
+const osMessageQueueAttr_t Maintenance_Queue_attributes = {
+  .name = "Maintenance_Queue"
+};
+/* Definitions for Emergency_Queue */
+osMessageQueueId_t Emergency_QueueHandle;
+const osMessageQueueAttr_t Emergency_Queue_attributes = {
+  .name = "Emergency_Queue"
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -92,6 +104,7 @@ uint8_t cliRXChar;
 uint8_t cliBufferTX[30];
 uint8_t cliBufferRX[30];
 int counter = 0;
+uint8_t maintenance = 0;
 
 /* USER CODE END PFP */
 
@@ -168,6 +181,12 @@ int main(void)
 
   /* creation of ped_Queue */
   ped_QueueHandle = osMessageQueueNew (4, sizeof(uint8_t), &ped_Queue_attributes);
+
+  /* creation of Maintenance_Queue */
+  Maintenance_QueueHandle = osMessageQueueNew (1, sizeof(uint8_t), &Maintenance_Queue_attributes);
+
+  /* creation of Emergency_Queue */
+  Emergency_QueueHandle = osMessageQueueNew (1, sizeof(uint8_t), &Emergency_Queue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -302,11 +321,11 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, Turn_N_S_Pin|Red_E_W_Pin|Yellow_E_W_Pin|Green_E_W_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PC13 */
-  GPIO_InitStruct.Pin = GPIO_PIN_13;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : Maintenance_Mode_Pin */
+  GPIO_InitStruct.Pin = Maintenance_Mode_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(Maintenance_Mode_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : Red_N_S_Pin Yellow_N_S_Pin Green_N_S_Pin LD2_Pin
                            Turn_E_W_Pin */
@@ -324,6 +343,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
@@ -334,6 +357,23 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef * husart)
 	while((HAL_UART_GetState(&huart2)&HAL_UART_STATE_BUSY_RX)==HAL_UART_STATE_BUSY_RX);
 	//Listen for the interrupt and buffer one character at a time.
 	HAL_UART_Receive_IT(&huart2, &cliRXChar ,1);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == GPIO_PIN_13)
+	{
+		if(maintenance == 0)
+		{
+			maintenance = 1;
+			xQueueGenericSendFromISR(Maintenance_QueueHandle, &maintenance, pdTRUE, NULL);
+		}
+		else
+		{
+			maintenance = 0;
+			xQueueGenericSendFromISR(Maintenance_QueueHandle, &maintenance, pdTRUE, NULL);
+		}
+	}
 }
 
 /* USER CODE END 4 */
@@ -348,15 +388,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef * husart)
 void Start_CLI_Input(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  uint8_t pedestrian = 0;
+  uint8_t input = 0;
   /* Infinite loop */
   for(;;)
   {
 	if(cliRXChar != '\0')
 	{
-		pedestrian = CLI_Receive();
-		if (pedestrian != 0)
-			osMessageQueuePut(ped_QueueHandle, &pedestrian, 0, 500);
+		input = CLI_Receive();
+		if(input == 1 || input == 2)
+			osMessageQueuePut(ped_QueueHandle, &input, 0, 500);
+		else if(input == 3 || input == 4)
+			osMessageQueuePut(Emergency_QueueHandle, &input, 0, 500);
 	}
     osDelay(100);
   }
@@ -379,30 +421,56 @@ void Start_Change_Light(void *argument)
   uint8_t pedestrian = 0;
   uint8_t pedestrianNS = 0;
   uint8_t pedestrianEW = 0;
+  uint8_t emergency = 0;
+  uint8_t emergencyNS = 0;
+  uint8_t emergencyEW = 0;
+  uint8_t isMaintenance = 0;
   /* Infinite loop */
   for(;;)
   {
-	osMessageQueueGet(ped_QueueHandle, &pedestrian, NULL, 200);
-	if(pedestrian == 1)
-		pedestrianNS = 1;
-	if(pedestrian == 2)
-		pedestrianEW = 1;
-	newLightState = lightStateChange(lightState, lightCounter, pedestrianNS, pedestrianEW);
-	if (newLightState != lightState)
+	osMessageQueueGet(Maintenance_QueueHandle, &isMaintenance, NULL, 200);
+	if(isMaintenance == 1)
 	{
-		lightState = newLightState;
-		osMessageQueuePut(CLI_QueueHandle, &lightState, 0, 500);
-		lightCounter = 0;
-		if(lightState == 0 || lightState == 4)
-		{
-			pedestrian = 0;
-			pedestrianNS = 0;
-			pedestrianEW = 0;
-		}
+		startMaintenanceMode();
+		lightState = 0;
+		newLightState = 0;
+		counter = 0;
+		isMaintenance = 2;
 	}
+	if(isMaintenance == 2)
+		maintenanceMode();
 	else
-		lightCounter++;
-	lightPhysicalChange(lightState);
+	{
+		osMessageQueueGet(ped_QueueHandle, &pedestrian, NULL, 200);
+		if(pedestrian == 1)
+			pedestrianNS = 1;
+		if(pedestrian == 2)
+			pedestrianEW = 1;
+		osMessageQueueGet(Emergency_QueueHandle, &emergency, NULL, 200);
+		if(emergency == 3)
+			emergencyNS = 1;
+		if(emergency == 4)
+			emergencyEW = 1;
+		newLightState = lightStateChange(lightState, lightCounter, pedestrianNS, pedestrianEW, emergencyNS, emergencyEW);
+		if (newLightState != lightState)
+		{
+			lightState = newLightState;
+			osMessageQueuePut(CLI_QueueHandle, &lightState, 0, 500);
+			lightCounter = 0;
+			if(lightState == 0 || lightState == 4)
+			{
+				pedestrian = 0;
+				pedestrianNS = 0;
+				pedestrianEW = 0;
+			}
+			emergency = 0;
+			emergencyNS = 0;
+			emergencyEW = 0;
+		}
+		else
+			lightCounter++;
+		lightPhysicalChange(lightState);
+	}
     osDelay(500);
   }
   /* USER CODE END Start_Change_Light */
