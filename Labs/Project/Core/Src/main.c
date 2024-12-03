@@ -5,6 +5,8 @@
 * @brief          : Main program body
 * Author: 		  : Quinn Maloney
 * SID:			  : 200431628
+* Demo:			  : https://www.youtube.com/watch?v=MVhOJU_bmV4
+* 					Can also be found in ReadMe.txt and on URCourses.
 ******************************************************************************
 * @attention
 *
