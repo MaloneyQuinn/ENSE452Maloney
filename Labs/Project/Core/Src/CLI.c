@@ -1,13 +1,28 @@
-/*
- * CLI.c
- *
- *  Created on: Nov 21, 2024
- *      Author: qkmal
- */
+/**
+******************************************************************************
+* @file           : CLI.c
+* @brief          : Source file containing the functions prototyped in CLI.h.
+* 					The functions are used to handle the terminal input and
+* 					output.
+* Author: 		  : Quinn Maloney
+* SID:			  : 200431628
+******************************************************************************
+*/
 
 
 #include "CLI.h"
 
+/**
+* @brief  CLI_Receive takes the user input, displays it to the terminal, and
+* 		  saves it inside a buffer to be used when the user submits the enter
+* 		  key.
+* @param  None
+* @retval returns a code based on input. If it is a pedestrian crossing N/S
+* 		  1 is returned. If it is a pedestrian crossing E/W 2 is returned.
+* 		  If an emergency vehicle is passing on N/S 3 is returned. If an
+* 		  emergency vehicle is passing on E/W 4 is returned. Otherwise 0
+* 		  is returned to indicate no change.
+*/
 uint16_t CLI_Receive()
 {
 	char newLineMessage[] = "Enter a command: ";
@@ -131,6 +146,12 @@ uint16_t CLI_Receive()
 	return 0;
 }
 
+/**
+* @brief  CLI_Display is used to update the status portion of the display
+* 		  and restore the cursor to its spot before the status is updated.
+* @param  state: the current state of the system.
+* @retval None
+*/
 void CLI_Display(uint8_t state)
 {
 	char topMoveCursor[] = "\x1b[0;9H";

@@ -1,20 +1,22 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+******************************************************************************
+* @file           : main.c
+* @brief          : Main program body
+* Author: 		  : Quinn Maloney
+* SID:			  : 200431628
+******************************************************************************
+* @attention
+*
+* Copyright (c) 2024 STMicroelectronics.
+* All rights reserved.
+*
+* This software is licensed under terms that can be found in the LICENSE file
+* in the root directory of this software component.
+* If no LICENSE file comes with this software, it is provided AS-IS.
+*
+******************************************************************************
+*/
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -101,7 +103,6 @@ void Start_CLI_Update(void *argument);
 /* USER CODE BEGIN PFP */
 
 uint8_t cliRXChar;
-uint8_t cliBufferTX[30];
 uint8_t cliBufferRX[30];
 int counter = 0;
 uint8_t maintenance = 0;
@@ -145,6 +146,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
+  // this initializes the program. It prepares the usart buffer to receive characters and prints to the terminal to set it up for use
   HAL_UART_Receive_IT (&huart2, &cliRXChar, 1);
   char newLineMessage[] = "Enter a command: ";
   char scrollBox[] = "\x1b[5;r";
@@ -265,10 +267,10 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
+* @brief USART2 Initialization Function
+* @param None
+* @retval None
+*/
 static void MX_USART2_UART_Init(void)
 {
 
@@ -298,10 +300,10 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
+* @brief GPIO Initialization Function
+* @param None
+* @retval None
+*/
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -352,6 +354,11 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/**
+* @brief  Function implementing the USART interrupt. It stores the character received in a buffer.
+* @param  husart: the pin used in this case HUSART2
+* @retval None
+*/
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef * husart)
 {
 	while((HAL_UART_GetState(&huart2)&HAL_UART_STATE_BUSY_RX)==HAL_UART_STATE_BUSY_RX);
@@ -359,6 +366,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef * husart)
 	HAL_UART_Receive_IT(&huart2, &cliRXChar ,1);
 }
 
+/**
+* @brief  Function implementing the GPIOC pin 13 interrupt (user button). It sends a value to the maintenance
+* 		queue to notify the Change_Light thread.
+* @param  GPIO_Pin: the in causing the interrupt. In this case GPIOC pin 13
+* @retval None
+*/
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if(GPIO_Pin == GPIO_PIN_13)
@@ -380,10 +393,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 /* USER CODE BEGIN Header_Start_CLI_Input */
 /**
-  * @brief  Function implementing the CLI_Input thread.
-  * @param  argument: Not used
-  * @retval None
-  */
+* @brief  Function implementing the CLI_Input thread. It is responsible for updating the terminal with the user
+* 		input and handling it accordingly. When a pedestrian event is requested it puts that in the ped queue
+* 		and when an emergency vehicle is requested it puts that in the Emergency queue. This queue is used by
+* 		the Change_Light thread.
+* @param  argument: Not used
+* @retval None
+*/
 /* USER CODE END Header_Start_CLI_Input */
 void Start_CLI_Input(void *argument)
 {
@@ -407,7 +423,11 @@ void Start_CLI_Input(void *argument)
 
 /* USER CODE BEGIN Header_Start_Change_Light */
 /**
-* @brief Function implementing the Change_Light thread.
+* @brief Function implementing the Change_Light thread. This is responsible for changing the light state. This
+* 		 includes both updating the internal state and changing the physical lights to match the state. It does
+* 		 not update the CLI state however. For that it sends a message to the CLI queue where it is handled by
+* 		 the CLI_Update thread. Emergency state is also checked in this thread where the states are frozen
+* 		 temporarily.
 * @param argument: Not used
 * @retval None
 */
@@ -478,7 +498,9 @@ void Start_Change_Light(void *argument)
 
 /* USER CODE BEGIN Header_Start_CLI_Update */
 /**
-* @brief Function implementing the CLI_Update thread.
+* @brief Function implementing the CLI_Update thread. It is responsible for updating the status of the terminal.
+* 		 This is only fully executed on a state change which is indicated by the data in the CLI queue from the
+* 		 Change_Light thread.
 * @param argument: Not used
 * @retval None
 */

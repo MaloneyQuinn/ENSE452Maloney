@@ -1,12 +1,46 @@
-/*
- * lights.c
- *
- *  Created on: Nov 22, 2024
- *      Author: qkmal
- */
+/**
+******************************************************************************
+* @file           : lights.c
+* @brief          : Source file containing the functions prototyped in
+* 					lights.h. The purpose of the functions in this file is to
+* 					handle the state switching logic alongside the
+* 					Change_Light thread.
+* Author: 		  : Quinn Maloney
+* SID:			  : 200431628
+******************************************************************************
+* The Pin out for the lights is as follows:
+*
+*		Red N/S			: GPIOA_PIN_0
+*		Yellow N/S		: GPIOA_PIN_1
+*		Green N/S		: GPIOA_PIN_4
+*		Turn N/S		: GPIOB_PIN_0
+*		Turn E/W		: GPIOA_PIN_10
+*		Green E/W		: GPIOB_PIN_5
+*		Yellow E/W		: GPIOB_PIN_4
+*		Red E/W			: GPIOB_PIN_10
+*
+* These values can also be found labeled inside Project.ioc.
+*
+******************************************************************************
+*/
 
 #include "lights.h"
 
+/**
+* @brief  lightStateChange returns the appropriate state either the next or
+* 		  same state that it is currently in depending on multiple factors.
+* @param  state: the current state of the system.
+* 		  counter: the current state of the state counter. used for timing
+* 		  pedestrianNS: either 0 for no or 1 for yes indicating a pedestrian
+* 		  crossing the N/S street.
+* 		  pedestrianEW: either 0 for no or 1 for yes indicating a pedestrian
+* 		  crossing the E/W street.
+* 		  emergencyNS: either 0 for no or 1 for yes indicating an emergency
+* 		  vehicle moving on the N/S street.
+* 		  emergencyEW: either 0 for no or 1 for yes indicating an emergency
+* 		  vehicle moving on the E/W street.
+* @retval state: the updated correct state.
+*/
 uint8_t lightStateChange(uint8_t state, uint16_t counter, uint8_t pedestrianNS, uint8_t pedestrianEW, uint8_t emergencyNS, uint8_t emergencyEW)
 {
 	if(emergencyNS == 1)
@@ -37,6 +71,12 @@ uint8_t lightStateChange(uint8_t state, uint16_t counter, uint8_t pedestrianNS, 
 		return state;
 }
 
+/**
+* @brief  lightPhysicalChange changes the pins of the breadboard LED lights
+* 		  according to the state that the system is in.
+* @param  state: the current state of the system.
+* @retval None
+*/
 void lightPhysicalChange(uint8_t state)
 {
 	if (state == 0 || state == 4)
@@ -118,6 +158,12 @@ void lightPhysicalChange(uint8_t state)
 	}
 }
 
+/**
+* @brief  maintenanceMode toggles the red LED lights on the breadboard
+* 		  used when in maintenance mode.
+* @param  None
+* @retval None
+*/
 void maintenanceMode()
 {
 	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
@@ -130,6 +176,12 @@ void maintenanceMode()
 	HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_10);
 }
 
+/**
+* @brief  startMaintenanceMode preps the system for maintenance mode by
+* 		  setting all the lights to off except for the red lights.
+* @param  None
+* @retval None
+*/
 void startMaintenanceMode()
 {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET);

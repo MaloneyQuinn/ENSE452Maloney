@@ -1,9 +1,12 @@
-/*
- * lights.h
- *
- *  Created on: Nov 22, 2024
- *      Author: qkmal
- */
+/**
+******************************************************************************
+* @file           : lights.h
+* @brief          : header for the lights.c file. Contains prototypes for the
+* 					functions in lights.c.
+* Author: 		  : Quinn Maloney
+* SID:			  : 200431628
+******************************************************************************
+*/
 
 #ifndef INC_LIGHTS_H_
 #define INC_LIGHTS_H_

@@ -1,9 +1,13 @@
-/*
- * CLI.h
- *
- *  Created on: Nov 21, 2024
- *      Author: qkmal
- */
+/**
+******************************************************************************
+* @file           : CLI.h
+* @brief          : header for the CLI.c file. Contains prototypes for the
+* 					functions in CLI.c. Also contains some variables to be
+* 					used in the functions.
+* Author: 		  : Quinn Maloney
+* SID:			  : 200431628
+******************************************************************************
+*/
 
 #ifndef INC_CLI_H_
 #define INC_CLI_H_
